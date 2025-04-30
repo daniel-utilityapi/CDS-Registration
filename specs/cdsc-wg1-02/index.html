@@ -191,10 +191,12 @@
       <li><a href="#message-format">6.1. Message Object Format</a></li>
       <li><a href="#message-types">6.2. Message Types</a></li>
       <li><a href="#message-statuses">6.3. Message Statuses</a></li>
-      <li><a href="#client-update-request-format">6.4. Client Update Request Object Format</a></li>
-      <li><a href="#messages-list">6.5. Listing Messages</a></li>
-      <li><a href="#messages-create">6.6. Creating Messages</a></li>
-      <li><a href="#messages-modify">6.7. Modifying Messages</a></li>
+      <li><a href="#message-related-types">6.4. Message Related Types</a></li>
+      <li><a href="#client-update-request-format">6.5. Client Update Request Object Format</a></li>
+      <li><a href="#messages-list">6.6. Listing Messages</a></li>
+      <li><a href="#messages-create">6.7. Creating Messages</a></li>
+      <li><a href="#messages-get">6.8. Retrieving Individual Messages</a></li>
+      <li><a href="#messages-modify">6.9. Modifying Messages</a></li>
     </ul>
   </li>
   <li><a href="#credentials-api">7. Credentials API</a>
@@ -220,6 +222,7 @@
     <ul>
       <li><a href="#server-provided-files-format">9.1. Server-Provided Files Object Format</a></li>
       <li><a href="#server-provided-files-list">9.2. Listing Server-Provided Files</a></li>
+      <li><a href="#server-provided-files-get">9.3. Retrieving Individual Server-Provided Files</a></li>
     </ul>
   </li>
   <li><a href="#extensions">10. Extensions</a></li>
@@ -318,7 +321,8 @@ The requirements for hosting this metadata endpoint follows <a href="https://www
 <p>A Server’s Authorization Server Metadata Object follows OAuth’s <a href="https://www.rfc-editor.org/rfc/rfc8414#section-2">Authorization Server Metadata</a> object format with the following modifications from OPTIONAL or RECOMMENDED to REQUIRED:</p>
 
 <ul>
-  <li><code class="language-plaintext highlighter-rouge">registration_endpoint</code> - <em><a href="#url">URL</a></em> - (REQUIRED) OAuth’s <a href="https://www.rfc-editor.org/rfc/rfc7591">Dynamic Client Registration</a> functionality is required to enable the <a href="#client-registration-process">Client Registration Process</a>.</li>
+  <li><code class="language-plaintext highlighter-rouge">registration_endpoint</code> - <em><a href="#url">URL</a></em> - (REQUIRED) OAuth’s <a href="https://www.rfc-editor.org/rfc/rfc7591">Dynamic Client Registration</a> functionality is required to enable the <a href="#client-registration-process">Client Registration Process</a>.
+For Metadata Objects accessed by means of the <code class="language-plaintext highlighter-rouge">cds_server_metadata</code> field in a <a href="#client-format">Client object</a> and subsequently the <code class="language-plaintext highlighter-rouge">oauth_metadata</code> field, the <code class="language-plaintext highlighter-rouge">registration_endpoint</code> field for the returned Metadata Object is OPTIONAL.</li>
   <li><code class="language-plaintext highlighter-rouge">scopes_supported</code> - <em>Array[<a href="#string">string</a>]</em> - (REQUIRED) The scopes in this array MUST represent a union of all scope <code class="language-plaintext highlighter-rouge">id</code> values contained in the <code class="language-plaintext highlighter-rouge">cds_scope_descriptions</code> objects.</li>
   <li><code class="language-plaintext highlighter-rouge">service_documentation</code> - <em><a href="#url">URL</a></em> - (REQUIRED) Developer documentation is required by the Server to help streamline Client integration.</li>
   <li><code class="language-plaintext highlighter-rouge">op_policy_uri</code> - <em><a href="#url">URL</a></em> - (REQUIRED) Policies for Clients registering is required.</li>
@@ -333,7 +337,7 @@ The requirements for hosting this metadata endpoint follows <a href="https://www
 <ul>
   <li><code class="language-plaintext highlighter-rouge">authorization_details_types_supported</code> - <em>Array[<a href="#string">string</a>]</em> - (REQUIRED) OAuth’s <a href="https://www.rfc-editor.org/rfc/rfc9396">Rich Authorization Requests</a> functionality is required.
 This array of values MUST be the same as <code class="language-plaintext highlighter-rouge">scopes_supported</code>.</li>
-  <li><code class="language-plaintext highlighter-rouge">pushed_authorization_request_endpoint</code> - <em><a href="#url">URL</a></em> - (REQUIRED) OAuth’s <a href="https://www.rfc-editor.org/rfc/rfc9126">Pushed Authorization Requests</a> functionality is required.</li>
+  <li><code class="language-plaintext highlighter-rouge">pushed_authorization_request_endpoint</code> - <em><a href="#url">URL</a></em> - (OPTIONAL) OAuth’s <a href="https://www.rfc-editor.org/rfc/rfc9126">Pushed Authorization Requests</a> functionality is REQUIRED when <code class="language-plaintext highlighter-rouge">response_types_supported</code> is not an empty list  (i.e. user authorization is supported for some scopes).</li>
 </ul>
 
 <p>In addition to the above additionally required set of OAuth <a href="https://www.rfc-editor.org/rfc/rfc8414#section-2">Authorization Server Metadata</a> values, this specification clarifies use of the following OAuth standard values:</p>
@@ -514,6 +518,8 @@ The following values are included in the default list available in scope descrip
 <ul>
   <li><code class="language-plaintext highlighter-rouge">id</code> - <em><a href="#string">string</a></em> - (REQUIRED) The unique identifier of the scope.
 This MUST be the same value as the object key the Metadata Object’s <code class="language-plaintext highlighter-rouge">cds_scope_descriptions</code> object.</li>
+  <li><code class="language-plaintext highlighter-rouge">type</code> - <em><a href="#scope-types">ScopeType</a></em> - (REQUIRED) The functionality type of the scope.
+This allows Servers to define multiple scope <code class="language-plaintext highlighter-rouge">id</code> values for the same Scope Type, for situations where Coverages or Authorization Details fields may be different (e.g. the historical customer data available for one territory has smart meter interval data, and for another it only has monthly meter reading data).</li>
   <li><code class="language-plaintext highlighter-rouge">name</code> - <em><a href="#string">string</a></em> - (REQUIRED) A human-readable name of the scope.</li>
   <li><code class="language-plaintext highlighter-rouge">description</code> - <em><a href="#string">string</a></em> - (REQUIRED) A human-readable description of what access or actions the scope will enable.</li>
   <li><code class="language-plaintext highlighter-rouge">documentation</code> - <em><a href="#url">URL</a></em> - (REQUIRED) Where developers can find documentation for the scope.</li>
@@ -700,7 +706,7 @@ This Client object scoped to <code class="language-plaintext highlighter-rouge">
 <p>Servers MUST also create Client objects that are configured for any other scopes for which the Client submitted registration and the submission was accepted by the Server.
 Servers MAY combine scopes into individual Client objects if the <code class="language-plaintext highlighter-rouge">response_types</code>, <code class="language-plaintext highlighter-rouge">grant_types</code>, and <code class="language-plaintext highlighter-rouge">token_endpoint_auth_method</code> for the scopes are the same.</p>
 
-<p>For each Client object created that has its <code class="language-plaintext highlighter-rouge">token_endpoint_auth_method</code> value as something other than <code class="language-plaintext highlighter-rouge">none</code>, at least one <a href="#credentials-format">Credential object</a> MUST be created and made available on the <a href="#credentials-api">Credentials API</a> for the Client to use.</p>
+<p>For each Client object created that has its <code class="language-plaintext highlighter-rouge">token_endpoint_auth_method</code> value as something other than <code class="language-plaintext highlighter-rouge">null</code>, at least one <a href="#credentials-format">Credential object</a> MUST be created and made available on the <a href="#credentials-api">Credentials API</a> for the Client to use.</p>
 
 <p>For created Client objects that have a non-empty <code class="language-plaintext highlighter-rouge">response_types</code> list, Servers MUST create a default <code class="language-plaintext highlighter-rouge">redirect_uri</code> value and and set it as the single value in the created Client object <code class="language-plaintext highlighter-rouge">redirect_uris</code> list.
 The created <code class="language-plaintext highlighter-rouge">redirect_uri</code> MUST provide functionality such that if specified as part of authorization request parameters, will redirect the user to a receipt of the authorization when the authorization is submitted successfully, or show an error to the user if the authorization is declined or otherwise errors.
@@ -906,6 +912,8 @@ If the Message <code class="language-plaintext highlighter-rouge">type</code> is
 If the Message <code class="language-plaintext highlighter-rouge">type</code> is <code class="language-plaintext highlighter-rouge">field_changes</code>, this is where the Client can retrieve the object that has been requested to be modified.
 If the Message <code class="language-plaintext highlighter-rouge">type</code> is <code class="language-plaintext highlighter-rouge">payment_request</code>, this is where the Client can submit their payment to the Server or if paid, a link to the payment receipt.
 If the Message <code class="language-plaintext highlighter-rouge">type</code> is <code class="language-plaintext highlighter-rouge">server_request</code>, this is where the Client can find more information about what information is being requested by the Server.</li>
+  <li><code class="language-plaintext highlighter-rouge">related_type</code> - <em><a href="#message-related-types">ClientMessageRelatedType</a></em> - (OPTIONAL) The type of object or resource linked to by the <code class="language-plaintext highlighter-rouge">related_uri</code>.
+If <code class="language-plaintext highlighter-rouge">related_uri</code> is included, this field is REQUIRED.</li>
   <li><code class="language-plaintext highlighter-rouge">amount</code> - <em><a href="#decimal">decimal</a></em> - (OPTIONAL) If the Message <code class="language-plaintext highlighter-rouge">type</code> is <code class="language-plaintext highlighter-rouge">payment_request</code>, this amount the Client needs to pay to satisfy the payment request.</li>
   <li><code class="language-plaintext highlighter-rouge">currency</code> - <em><a href="#string">string</a></em> - (OPTIONAL) If the Message <code class="language-plaintext highlighter-rouge">type</code> is <code class="language-plaintext highlighter-rouge">payment_request</code>, this is the monetary currency for the <code class="language-plaintext highlighter-rouge">amount</code> in <a href="https://en.wikipedia.org/wiki/ISO_4217">ISO 4217</a> currency code.</li>
 </ul>
@@ -942,7 +950,29 @@ For Messages with <code class="language-plaintext highlighter-rouge">type</code>
 The Client is RECOMMENDED to submit a <code class="language-plaintext highlighter-rouge">support_request</code> Messages with the <code class="language-plaintext highlighter-rouge">related_uri</code> as the relevant errored Message’s <code class="language-plaintext highlighter-rouge">uri</code>.</li>
 </ul>
 
-<h3 id="64-client-update-request-object-format-">6.4. Client Update Request Object Format <a id="client-update-request-format" href="#client-update-request-format" class="permalink">🔗</a></h3>
+<h3 id="64-message-related-types-">6.4. Message Related Types <a id="message-related-types" href="#message-related-types" class="permalink">🔗</a></h3>
+
+<p>When included, Message object <code class="language-plaintext highlighter-rouge">related_type</code> values MUST be one of the following:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">more_info</code> - The <code class="language-plaintext highlighter-rouge">related_uri</code> is to a resource (e.g. regulatory compliance details website page) with additional information for the Client to reference.</li>
+  <li><code class="language-plaintext highlighter-rouge">documentation</code> - The <code class="language-plaintext highlighter-rouge">related_uri</code> is to a technical documentation resource (e.g. API documentation website page) for the Client to reference.</li>
+  <li><code class="language-plaintext highlighter-rouge">support</code> - The <code class="language-plaintext highlighter-rouge">related_uri</code> is to a technical support resource (e.g. support contact form) for the Client to reference.</li>
+  <li><code class="language-plaintext highlighter-rouge">client_list</code> - The <code class="language-plaintext highlighter-rouge">related_uri</code> is to a <a href="#clients-list">Client list</a>, which can include request parameters.</li>
+  <li><code class="language-plaintext highlighter-rouge">client</code> - The <code class="language-plaintext highlighter-rouge">related_uri</code> is to a <a href="#clients-get">individual Client</a>.</li>
+  <li><code class="language-plaintext highlighter-rouge">grant_list</code> - The <code class="language-plaintext highlighter-rouge">related_uri</code> is to a <a href="#grants-list">Grant list</a>, which can include request parameters.</li>
+  <li><code class="language-plaintext highlighter-rouge">grant</code> - The <code class="language-plaintext highlighter-rouge">related_uri</code> is to a <a href="#grants-get">individual Grant</a>.</li>
+  <li><code class="language-plaintext highlighter-rouge">message_list</code> - The <code class="language-plaintext highlighter-rouge">related_uri</code> is to a <a href="#messages-list">Message list</a>, which can include request parameters.</li>
+  <li><code class="language-plaintext highlighter-rouge">message</code> - The <code class="language-plaintext highlighter-rouge">related_uri</code> is to a <a href="#messages-get">individual Message</a>.</li>
+  <li><code class="language-plaintext highlighter-rouge">credential_list</code> - The <code class="language-plaintext highlighter-rouge">related_uri</code> is to a <a href="#credentials-list">Credential list</a>, which can include request parameters.</li>
+  <li><code class="language-plaintext highlighter-rouge">credential</code> - The <code class="language-plaintext highlighter-rouge">related_uri</code> is to a <a href="#credentials-get">individual Credential</a>.</li>
+</ul>
+
+<p>For <code class="language-plaintext highlighter-rouge">more_info</code>, <code class="language-plaintext highlighter-rouge">documentation</code>, and <code class="language-plaintext highlighter-rouge">support</code> related types, authentication for requests to these resources is unspecified, where Servers MAY allow unauthenticated requests to the resource (e.g. public webpage) or MAY require user authentication (e.g. user login).</p>
+
+<p>For <code class="language-plaintext highlighter-rouge">client_list</code>, <code class="language-plaintext highlighter-rouge">client</code>, <code class="language-plaintext highlighter-rouge">grant_list</code>, <code class="language-plaintext highlighter-rouge">grant</code>, <code class="language-plaintext highlighter-rouge">message_list</code>, <code class="language-plaintext highlighter-rouge">message</code>, <code class="language-plaintext highlighter-rouge">credential_list</code>, and <code class="language-plaintext highlighter-rouge">credential</code> related types, Clients MUST authenticate requests to the resource with a valid Bearer <code class="language-plaintext highlighter-rouge">access_token</code> scoped to the <code class="language-plaintext highlighter-rouge">client_admin</code> scope.</p>
+
+<h3 id="65-client-update-request-object-format-">6.5. Client Update Request Object Format <a id="client-update-request-format" href="#client-update-request-format" class="permalink">🔗</a></h3>
 
 <p>Client Update Request objects are formatted as JSON objects and contain the following named values:</p>
 
@@ -957,7 +987,7 @@ For Messages with <code class="language-plaintext highlighter-rouge">type</code>
   <li><code class="language-plaintext highlighter-rouge">new_value</code> - <em>various</em> - (OPTIONAL) For Messages with <code class="language-plaintext highlighter-rouge">type</code> values of <code class="language-plaintext highlighter-rouge">field_changes</code>, this MUST be the value of the field that the is being requested to be changed to.</li>
 </ul>
 
-<h3 id="65-listing-messages-">6.5. Listing Messages <a id="messages-list" href="#messages-list" class="permalink">🔗</a></h3>
+<h3 id="66-listing-messages-">6.6. Listing Messages <a id="messages-list" href="#messages-list" class="permalink">🔗</a></h3>
 
 <p>Clients may request to list Message objects that they have access to by making an HTTPS <code class="language-plaintext highlighter-rouge">GET</code> request, authenticated with a valid Bearer <code class="language-plaintext highlighter-rouge">access_token</code> scoped to the <code class="language-plaintext highlighter-rouge">client_admin</code> scope, to the <code class="language-plaintext highlighter-rouge">cds_messages_api</code> URL included in the <a href="#auth-server-metadata-format">Authorization Server Metadata</a>.
 The Message listing request responses are formatted as JSON objects and contain the following named values.</p>
@@ -985,7 +1015,7 @@ For example, if the Client requests a <code class="language-plaintext highlighte
 
 <p>Listings of Message objects MUST be ordered in reverse chronological order by <code class="language-plaintext highlighter-rouge">modified</code> timestamp, where the most recently modified relevant Message MUST be first in each listing.</p>
 
-<h3 id="66-creating-messages-">6.6. Creating Messages <a id="messages-create" href="#messages-create" class="permalink">🔗</a></h3>
+<h3 id="67-creating-messages-">6.7. Creating Messages <a id="messages-create" href="#messages-create" class="permalink">🔗</a></h3>
 
 <p>Clients create new Messages by sending an authenticated HTTPS <code class="language-plaintext highlighter-rouge">POST</code> request to the <code class="language-plaintext highlighter-rouge">cds_messages_api</code> endpoint with the body of the request formatted a JSON object.
 The fields included in JSON object MUST include the following:</p>
@@ -1020,7 +1050,11 @@ For <code class="language-plaintext highlighter-rouge">type</code> values of <co
 
 <p>When Clients submit Messages with <code class="language-plaintext highlighter-rouge">type</code> value of <code class="language-plaintext highlighter-rouge">client_submission</code>, if the Message referenced in the <code class="language-plaintext highlighter-rouge">previous_uri</code> has a <code class="language-plaintext highlighter-rouge">status</code> of <code class="language-plaintext highlighter-rouge">open</code>, then the Server MUST update the <code class="language-plaintext highlighter-rouge">status</code> of that referenced Message to <code class="language-plaintext highlighter-rouge">pending</code>, which indicates that the Client has submitted a response for Server review.</p>
 
-<h3 id="67-modifying-messages-">6.7. Modifying Messages <a id="messages-modify" href="#messages-modify" class="permalink">🔗</a></h3>
+<h3 id="68-retrieving-individual-messages-">6.8. Retrieving Individual Messages <a id="messages-get" href="#messages-get" class="permalink">🔗</a></h3>
+
+<p>The URL to be used to send <code class="language-plaintext highlighter-rouge">GET</code> requests for retrieving individual Message objects MUST be the Message <code class="language-plaintext highlighter-rouge">uri</code> provided in the <a href="#message-format">Message object</a>.</p>
+
+<h3 id="69-modifying-messages-">6.9. Modifying Messages <a id="messages-modify" href="#messages-modify" class="permalink">🔗</a></h3>
 
 <p>Clients may modify fields in a Messages object by sending an authenticated HTTPS <code class="language-plaintext highlighter-rouge">PATCH</code> request to the Message <code class="language-plaintext highlighter-rouge">uri</code> endpoint with the body of the request formatted a JSON object.
 The fields included in JSON object are the fields the Client intends to modify with the submitted fields’ values.
@@ -1292,6 +1326,7 @@ It is RECOMMENDED that automated sharing of structured datasets be performed usi
 
 <ul>
   <li><code class="language-plaintext highlighter-rouge">file_id</code> - <em><a href="#string">string</a></em> - (REQUIRED) The unique identifier for the Server-Provided File on the Server’s system.</li>
+  <li><code class="language-plaintext highlighter-rouge">uri</code> - <em><a href="#url">URL</a></em> - (REQUIRED) A link to this specific Server-Provided File that can be used to <a href="#server-provided-files-get">retrieve</a> the individual Server-Provided File.</li>
   <li><code class="language-plaintext highlighter-rouge">created</code> - <em><a href="#datetime">datetime</a></em> - (REQUIRED) When the Server-Provided File was created.</li>
   <li><code class="language-plaintext highlighter-rouge">modified</code> - <em><a href="#datetime">datetime</a></em> - (REQUIRED) When the Server-Provided File was most recently modified.
 If the Server-Provided File has not been modified since creation, this is the same value as <code class="language-plaintext highlighter-rouge">created</code>.</li>
@@ -1319,6 +1354,10 @@ If no previous segment exists (i.e. the requester is at the front of the list), 
 </ul>
 
 <p>Listings of Server-Provided File objects MUST be ordered in reverse chronological order by <code class="language-plaintext highlighter-rouge">modified</code> timestamp, where the most recently updated relevant Server-Provided File object MUST be first in each listing.</p>
+
+<h3 id="93-retrieving-individual-server-provided-files-">9.3. Retrieving Individual Server-Provided Files <a id="server-provided-files-get" href="#server-provided-files-get" class="permalink">🔗</a></h3>
+
+<p>The URL to be used to send <code class="language-plaintext highlighter-rouge">GET</code> requests for retrieving individual Server-Provided File objects MUST be the Server-Provided File <code class="language-plaintext highlighter-rouge">uri</code> provided in the <a href="#message-format">Message object</a>.</p>
 
 <h2 id="11-extensions-">11. Extensions <a id="extensions" href="#extensions" class="permalink">🔗</a></h2>
 
