@@ -193,10 +193,11 @@
       <li><a href="#message-statuses">6.3. Message Statuses</a></li>
       <li><a href="#message-related-types">6.4. Message Related Types</a></li>
       <li><a href="#client-update-request-format">6.5. Client Update Request Object Format</a></li>
-      <li><a href="#messages-list">6.6. Listing Messages</a></li>
-      <li><a href="#messages-create">6.7. Creating Messages</a></li>
-      <li><a href="#messages-get">6.8. Retrieving Individual Messages</a></li>
-      <li><a href="#messages-modify">6.9. Modifying Messages</a></li>
+      <li><a href="#client-grant-request-format">6.6. Client Grant Request Object Format</a></li>
+      <li><a href="#messages-list">6.7. Listing Messages</a></li>
+      <li><a href="#messages-create">6.8. Creating Messages</a></li>
+      <li><a href="#messages-get">6.9. Retrieving Individual Messages</a></li>
+      <li><a href="#messages-modify">6.10. Modifying Messages</a></li>
     </ul>
   </li>
   <li><a href="#credentials-api">7. Credentials API</a>
@@ -907,11 +908,14 @@ If the Message <code class="language-plaintext highlighter-rouge">type</code> is
 If the Message <code class="language-plaintext highlighter-rouge">type</code> is <code class="language-plaintext highlighter-rouge">notification</code>, <code class="language-plaintext highlighter-rouge">private_message</code>, or <code class="language-plaintext highlighter-rouge">support_request</code>, this is the message body.</li>
   <li><code class="language-plaintext highlighter-rouge">updates_requested</code> - <em>Array[<a href="#client-update-request-format">ClientUpdateRequest</a>]</em> - (OPTIONAL) The list of values that a Client has requested to be updated.
 This field is required for Messages with a <code class="language-plaintext highlighter-rouge">type</code> value of <code class="language-plaintext highlighter-rouge">field_changes</code> or <code class="language-plaintext highlighter-rouge">server_request</code>.</li>
+  <li><code class="language-plaintext highlighter-rouge">grants_requested</code> - <em>Array[<a href="#client-grant-request-format">ClientGrantRequest</a>]</em> - (OPTIONAL) The list of grants with their parameters that a Client has requested to be issued by the Server.
+This field is required for Messages with a <code class="language-plaintext highlighter-rouge">type</code> value of <code class="language-plaintext highlighter-rouge">grant_request</code>.</li>
   <li><code class="language-plaintext highlighter-rouge">related_uri</code> - <em><a href="#url">URL</a> or <code class="language-plaintext highlighter-rouge">null</code></em> - (OPTIONAL) If the Message <code class="language-plaintext highlighter-rouge">type</code> is <code class="language-plaintext highlighter-rouge">notification</code> or <code class="language-plaintext highlighter-rouge">private_message</code>, this value is where the Client can find more information, if available.
 If the Message <code class="language-plaintext highlighter-rouge">type</code> is <code class="language-plaintext highlighter-rouge">support_request</code>, this value is a relevant URL for which the Client is requesting technical support.
 If the Message <code class="language-plaintext highlighter-rouge">type</code> is <code class="language-plaintext highlighter-rouge">field_changes</code>, this is where the Client can retrieve the object that has been requested to be modified.
 If the Message <code class="language-plaintext highlighter-rouge">type</code> is <code class="language-plaintext highlighter-rouge">payment_request</code>, this is where the Client can submit their payment to the Server or if paid, a link to the payment receipt.
-If the Message <code class="language-plaintext highlighter-rouge">type</code> is <code class="language-plaintext highlighter-rouge">server_request</code>, this is where the Client can find more information about what information is being requested by the Server.</li>
+If the Message <code class="language-plaintext highlighter-rouge">type</code> is <code class="language-plaintext highlighter-rouge">server_request</code>, this is where the Client can find more information about what information is being requested by the Server.
+If the Message <code class="language-plaintext highlighter-rouge">type</code> is <code class="language-plaintext highlighter-rouge">grant_request</code>, this value is a relevant Client <code class="language-plaintext highlighter-rouge">cds_client_uri</code> to which the requesting Client is requesting the Grants be assinged to if created by the Server, which MAY be a Client that is managed by the requesting Client (e.g. a “self” grant) or MAY be a completely separate Client with which the requesting Client is working (e.g. a “third-party” grant).</li>
   <li><code class="language-plaintext highlighter-rouge">related_type</code> - <em><a href="#message-related-types">ClientMessageRelatedType</a></em> - (OPTIONAL) The type of object or resource linked to by the <code class="language-plaintext highlighter-rouge">related_uri</code>.
 If <code class="language-plaintext highlighter-rouge">related_uri</code> is included, this field is REQUIRED.</li>
   <li><code class="language-plaintext highlighter-rouge">amount</code> - <em><a href="#decimal">decimal</a></em> - (OPTIONAL) If the Message <code class="language-plaintext highlighter-rouge">type</code> is <code class="language-plaintext highlighter-rouge">payment_request</code>, this amount the Client needs to pay to satisfy the payment request.</li>
@@ -928,6 +932,7 @@ This message is considered to be not individually tailored to the Client specifi
   <li><code class="language-plaintext highlighter-rouge">private_message</code> - The Server or Client is sending a private message to the opposite party.
 This message is considered to be individually tailored and relevant only to that Client or Server.</li>
   <li><code class="language-plaintext highlighter-rouge">support_request</code> - The Client is submitting a technical support request to the Server.</li>
+  <li><code class="language-plaintext highlighter-rouge">grant_request</code> - The Client is submitting a request for the Server to create Grants with the parameters provided in the <code class="language-plaintext highlighter-rouge">grants_requested</code> list.</li>
   <li><code class="language-plaintext highlighter-rouge">field_changes</code> - This Message represents that the Client has submitted changes to field values in other API objects, listed in the <code class="language-plaintext highlighter-rouge">updates_requested</code> list, but these changes were not synchronously approved by the Server and need to be reviewed asynchronously by the Server.
 While the Client originally triggered this Message to be created by submitting field changes that need to be asynchronously reviewed, the Server is responsible for creating this Message, so the <code class="language-plaintext highlighter-rouge">creator</code> value is <code class="language-plaintext highlighter-rouge">null</code>.</li>
   <li><code class="language-plaintext highlighter-rouge">server_request</code> - The Server is requesting the Client submit a new Message of type <code class="language-plaintext highlighter-rouge">client_submission</code> with the fields listed in <code class="language-plaintext highlighter-rouge">updates_requested</code>.</li>
@@ -942,9 +947,9 @@ Both Clients and Servers MAY create these types of Message requests.</li>
 
 <ul>
   <li><code class="language-plaintext highlighter-rouge">complete</code> - For Messages with <code class="language-plaintext highlighter-rouge">type</code> values of <code class="language-plaintext highlighter-rouge">notification</code>, <code class="language-plaintext highlighter-rouge">private_message</code>, or <code class="language-plaintext highlighter-rouge">client_submission</code>, the <code class="language-plaintext highlighter-rouge">status</code> MUST be set as <code class="language-plaintext highlighter-rouge">complete</code>.
-For Messages with <code class="language-plaintext highlighter-rouge">type</code> values of <code class="language-plaintext highlighter-rouge">support_request</code>, <code class="language-plaintext highlighter-rouge">field_changes</code>, <code class="language-plaintext highlighter-rouge">server_request</code>, or <code class="language-plaintext highlighter-rouge">payment_request</code>, this represents the Server has completed and approved or resolved the Client’s technical support request, field changes, submission, or payment.</li>
+For Messages with <code class="language-plaintext highlighter-rouge">type</code> values of <code class="language-plaintext highlighter-rouge">support_request</code>, <code class="language-plaintext highlighter-rouge">grant_request</code>, <code class="language-plaintext highlighter-rouge">field_changes</code>, <code class="language-plaintext highlighter-rouge">server_request</code>, or <code class="language-plaintext highlighter-rouge">payment_request</code>, this represents the Server has completed and approved or resolved the Client’s technical support request, field changes, submission, or payment.</li>
   <li><code class="language-plaintext highlighter-rouge">open</code> - For Messages with <code class="language-plaintext highlighter-rouge">type</code> values of <code class="language-plaintext highlighter-rouge">server_request</code> or <code class="language-plaintext highlighter-rouge">payment_request</code>, this represents that the Client has not yet submitted a response to the Server’s submission or payment request.</li>
-  <li><code class="language-plaintext highlighter-rouge">pending</code> - For Messages with <code class="language-plaintext highlighter-rouge">type</code> values of <code class="language-plaintext highlighter-rouge">support_request</code>, <code class="language-plaintext highlighter-rouge">field_changes</code>, <code class="language-plaintext highlighter-rouge">server_request</code>, or <code class="language-plaintext highlighter-rouge">payment_request</code>, this represents the Server has not yet completed it’s review of the Client’s technical support request, field changes, submission, or payment.</li>
+  <li><code class="language-plaintext highlighter-rouge">pending</code> - For Messages with <code class="language-plaintext highlighter-rouge">type</code> values of <code class="language-plaintext highlighter-rouge">support_request</code>, <code class="language-plaintext highlighter-rouge">grant_request</code>, <code class="language-plaintext highlighter-rouge">field_changes</code>, <code class="language-plaintext highlighter-rouge">server_request</code>, or <code class="language-plaintext highlighter-rouge">payment_request</code>, this represents the Server has not yet completed it’s review of the Client’s technical support request, field changes, submission, or payment.</li>
   <li><code class="language-plaintext highlighter-rouge">rejected</code> - For Messages with <code class="language-plaintext highlighter-rouge">type</code> values of <code class="language-plaintext highlighter-rouge">field_changes</code>, <code class="language-plaintext highlighter-rouge">server_request</code>, or <code class="language-plaintext highlighter-rouge">payment_request</code>, this represents the Server has completed and rejected the Client’s requested field changes, submission, or payment.</li>
   <li><code class="language-plaintext highlighter-rouge">errored</code> - For Messages with <code class="language-plaintext highlighter-rouge">type</code> values of <code class="language-plaintext highlighter-rouge">field_changes</code>, <code class="language-plaintext highlighter-rouge">server_request</code>, or <code class="language-plaintext highlighter-rouge">payment_request</code>, this represents the Server encountered an issue while processing the Client’s field changes, submission, or payment.
 The Client is RECOMMENDED to submit a <code class="language-plaintext highlighter-rouge">support_request</code> Messages with the <code class="language-plaintext highlighter-rouge">related_uri</code> as the relevant errored Message’s <code class="language-plaintext highlighter-rouge">uri</code>.</li>
@@ -987,7 +992,16 @@ For Messages with <code class="language-plaintext highlighter-rouge">type</code>
   <li><code class="language-plaintext highlighter-rouge">new_value</code> - <em>various</em> - (OPTIONAL) For Messages with <code class="language-plaintext highlighter-rouge">type</code> values of <code class="language-plaintext highlighter-rouge">field_changes</code>, this MUST be the value of the field that the is being requested to be changed to.</li>
 </ul>
 
-<h3 id="66-listing-messages-">6.6. Listing Messages <a id="messages-list" href="#messages-list" class="permalink">🔗</a></h3>
+<h3 id="66-client-grant-request-object-format-">6.6. Client Grant Request Object Format <a id="client-grant-request-format" href="#client-grant-request-format" class="permalink">🔗</a></h3>
+
+<p>Client Grant Request objects are formatted as JSON objects and contain the following named values:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">scope</code> - <em><a href="#string">string</a></em> - (REQUIRED) The OAuth scope string being requested for the Grant.</li>
+  <li><code class="language-plaintext highlighter-rouge">authorization_details</code> - <em>Array[<a href="https://www.rfc-editor.org/rfc/rfc9396#section-7.1">OAuth AuthorizationDetail</a>]</em> - (OPTIONAL) The OAuth authorization details, if any, to further specify the grant’s requested scope.</li>
+</ul>
+
+<h3 id="67-listing-messages-">6.7. Listing Messages <a id="messages-list" href="#messages-list" class="permalink">🔗</a></h3>
 
 <p>Clients may request to list Message objects that they have access to by making an HTTPS <code class="language-plaintext highlighter-rouge">GET</code> request, authenticated with a valid Bearer <code class="language-plaintext highlighter-rouge">access_token</code> scoped to the <code class="language-plaintext highlighter-rouge">client_admin</code> scope, to the <code class="language-plaintext highlighter-rouge">cds_messages_api</code> URL included in the <a href="#auth-server-metadata-format">Authorization Server Metadata</a>.
 The Message listing request responses are formatted as JSON objects and contain the following named values.</p>
@@ -1015,7 +1029,7 @@ For example, if the Client requests a <code class="language-plaintext highlighte
 
 <p>Listings of Message objects MUST be ordered in reverse chronological order by <code class="language-plaintext highlighter-rouge">modified</code> timestamp, where the most recently modified relevant Message MUST be first in each listing.</p>
 
-<h3 id="67-creating-messages-">6.7. Creating Messages <a id="messages-create" href="#messages-create" class="permalink">🔗</a></h3>
+<h3 id="68-creating-messages-">6.8. Creating Messages <a id="messages-create" href="#messages-create" class="permalink">🔗</a></h3>
 
 <p>Clients create new Messages by sending an authenticated HTTPS <code class="language-plaintext highlighter-rouge">POST</code> request to the <code class="language-plaintext highlighter-rouge">cds_messages_api</code> endpoint with the body of the request formatted a JSON object.
 The fields included in JSON object MUST include the following:</p>
@@ -1050,11 +1064,11 @@ For <code class="language-plaintext highlighter-rouge">type</code> values of <co
 
 <p>When Clients submit Messages with <code class="language-plaintext highlighter-rouge">type</code> value of <code class="language-plaintext highlighter-rouge">client_submission</code>, if the Message referenced in the <code class="language-plaintext highlighter-rouge">previous_uri</code> has a <code class="language-plaintext highlighter-rouge">status</code> of <code class="language-plaintext highlighter-rouge">open</code>, then the Server MUST update the <code class="language-plaintext highlighter-rouge">status</code> of that referenced Message to <code class="language-plaintext highlighter-rouge">pending</code>, which indicates that the Client has submitted a response for Server review.</p>
 
-<h3 id="68-retrieving-individual-messages-">6.8. Retrieving Individual Messages <a id="messages-get" href="#messages-get" class="permalink">🔗</a></h3>
+<h3 id="69-retrieving-individual-messages-">6.9. Retrieving Individual Messages <a id="messages-get" href="#messages-get" class="permalink">🔗</a></h3>
 
 <p>The URL to be used to send <code class="language-plaintext highlighter-rouge">GET</code> requests for retrieving individual Message objects MUST be the Message <code class="language-plaintext highlighter-rouge">uri</code> provided in the <a href="#message-format">Message object</a>.</p>
 
-<h3 id="69-modifying-messages-">6.9. Modifying Messages <a id="messages-modify" href="#messages-modify" class="permalink">🔗</a></h3>
+<h3 id="610-modifying-messages-">6.10. Modifying Messages <a id="messages-modify" href="#messages-modify" class="permalink">🔗</a></h3>
 
 <p>Clients may modify fields in a Messages object by sending an authenticated HTTPS <code class="language-plaintext highlighter-rouge">PATCH</code> request to the Message <code class="language-plaintext highlighter-rouge">uri</code> endpoint with the body of the request formatted a JSON object.
 The fields included in JSON object are the fields the Client intends to modify with the submitted fields’ values.
