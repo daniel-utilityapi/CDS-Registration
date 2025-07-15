@@ -338,12 +338,13 @@ If multiple countries have jurisdiction over a piece of coverage, Servers MUST h
   <li><code class="language-plaintext highlighter-rouge">commodity_types</code> - <em>Array[<a href="#commodity-types">CommodityType</a>]</em> - (REQUIRED) A list of services or commodities that are applicable to the coverage entry, which may be an empty array if the entry does not have an applicable commodity.</li>
   <li><code class="language-plaintext highlighter-rouge">capabilities</code> - <em>Array[<a href="#server-capabilities">ServerCapability</a>]</em> - (REQUIRED) What capabilities and functionality this Server supports for the coverage entry, which may be an empty array if the Server is not offering any capabilities for the coverage entry and is just publishing the coverage entry itself for informational purposes. This list MUST NOT include the <code class="language-plaintext highlighter-rouge">coverage</code> capability.</li>
   <li><code class="language-plaintext highlighter-rouge">map_resource</code> - <em><a href="#url">URL</a></em> - (OPTIONAL) Link to a map of the coverage territory.</li>
-  <li><code class="language-plaintext highlighter-rouge">map_content_type</code> - <em><a href="#mime-type">MIME type</a></em> - (OPTIONAL) Content-Type format of the <code class="language-plaintext highlighter-rouge">map_resource</code>.</li>
-  <li><code class="language-plaintext highlighter-rouge">geojson_resource</code> - <em><a href="#url">URL</a></em> - (OPTIONAL) Link to a GeoJSON object mapping the coverage territory.</li>
+  <li><code class="language-plaintext highlighter-rouge">map_content_type</code> - <em><a href="#mime-type">MIME type</a></em> - (OPTIONAL) Content-Type format of the <code class="language-plaintext highlighter-rouge">map_resource</code>. This field is REQUIRED if <code class="language-plaintext highlighter-rouge">map_resource</code> is provided.</li>
+  <li><code class="language-plaintext highlighter-rouge">geojson_resource</code> - <em><a href="#url">URL</a></em> - (OPTIONAL) Link to a GeoJSON object mapping the coverage territory.
+If provided, the linked GeoJSON object MUST use the default WGS 84 coordinate system, as described in the GeoJSON specification (<a href="#ref-geojson-coords">Section 4</a>).
+If Servers want to provide shapefiles or other geometries as GeoJSON data in coordinate systems other than WSG 84, they MUST <a href="#extensions">extend</a> this specification to add another field in the Coverage Entry object besides <code class="language-plaintext highlighter-rouge">geojson_resource</code> so that Clients do not misinterpret the linked GeoJSON object as being in the WSG 84 coordinate system.</li>
 </ul>
 
-<p>When <code class="language-plaintext highlighter-rouge">type</code> is <code class="language-plaintext highlighter-rouge">geographic</code>, one or both of <code class="language-plaintext highlighter-rouge">map_resource</code> and <code class="language-plaintext highlighter-rouge">geojson_resource</code> MUST be provided.
-If <code class="language-plaintext highlighter-rouge">map_resource</code> is provided, then <code class="language-plaintext highlighter-rouge">map_content_type</code> MUST also be provided.</p>
+<p>When <code class="language-plaintext highlighter-rouge">type</code> is <code class="language-plaintext highlighter-rouge">geographic</code>, one or both of <code class="language-plaintext highlighter-rouge">map_resource</code> and <code class="language-plaintext highlighter-rouge">geojson_resource</code> MUST be provided.</p>
 
 <h3 id="44-coverage-entry-types-">4.4. Coverage Entry Types <a id="coverage-entry-types" href="#coverage-entry-types" class="permalink">🔗</a></h3>
 
@@ -419,16 +420,16 @@ The Server MUST maintain the redirect response for as long as the Server retains
 
 <p>Other specifications MAY extend this specification to allow for seamless expansion in Server metadata, capabilities, and coverage.</p>
 
-<p><a href="#metadata-object-format">Metadata Object</a>, <a href="#coverage-listing-format">Coverage Listing</a>, and <a href="#coverage-listing-format">Coverage Entry</a> MAY be extended by other specifications to allow for additional values to be possible in their object formats.
-When extending the object format, other specifications MUST reference the relevant section in this specification and denote that they are extending the object to add a new named value.
-The additional named value MUST be specified with a general description, the value’s format, and whether the value is REQUIRED or OPTIONAL.</p>
+<p><a href="#metadata-object-format">Metadata Object</a>, <a href="#coverage-listing-format">Coverage Listing</a>, and <a href="#coverage-listing-format">Coverage Entry</a> MAY be extended by other specifications to allow for additional fields to be possible in their objects.
+When extending the object format, other specifications MUST reference the relevant section in this specification and denote that they are extending the object to add a new named field.
+The additional field MUST be specified with a general description, the field value’s format, and whether the field is REQUIRED or OPTIONAL.</p>
 
 <p>The enumerated lists for valid <a href="#server-capabilities">Server Capabilities</a>, <a href="#coverage-listing-filters">Coverage Listing Filters</a>, <a href="#coverage-entry-types">Coverage Entry Types</a>, <a href="#capability-roles">Capability Roles</a>, <a href="#infrastructure-types">Infrastructure Types</a>, <a href="#commodity-types">Commodity Types</a>, and  MAY be extended by other specifications to allow for additional strings to be valid.
 When extending enumerated list, other specifications MUST reference the relevant section in this specification and denote that they are extending the list to add a new string.
 The additional string MUST be specified with a description of what that string means when it is included in the relevant array.</p>
 
-<p>To facilitate forwards compatibility, Clients MUST ignore unknown or undocumented object values and enumerated strings.
-If a Client cannot provide adequate functionality based on too many unknown or undocumented object values or enumerated strings, the Client SHOULD refer to the Server’s technical documentation (the <code class="language-plaintext highlighter-rouge">documentation</code> value in the metadata object) or contact the Server’s technical support (via the <code class="language-plaintext highlighter-rouge">support</code> value in the metadata object).</p>
+<p>To facilitate forwards compatibility, Clients MUST ignore unknown or undocumented object fields and enumerated strings.
+If a Client cannot provide adequate functionality based on too many unknown or undocumented object fields or enumerated strings, the Client SHOULD refer to the Server’s technical documentation (the <code class="language-plaintext highlighter-rouge">documentation</code> value in the metadata object) or contact the Server’s technical support (via the <code class="language-plaintext highlighter-rouge">support</code> value in the metadata object).</p>
 
 <h2 id="7-examples-">7. Examples <a id="examples" href="#examples" class="permalink">🔗</a></h2>
 
@@ -555,6 +556,10 @@ If the metadata or coverage object is made available publicly, then the linked r
 <p><a id="ref-geojson" href="#ref-geojson" class="permalink">🔗</a>
 <code class="language-plaintext highlighter-rouge">GeoJSON</code> - Section 3. GeoJSON Object, “The GeoJSON Format”, RFC 7946, Internet Engineering Task Force (IETF),
 <a href="https://datatracker.ietf.org/doc/html/rfc7946#section-3">https://datatracker.ietf.org/doc/html/rfc7946#section-3</a></p>
+
+<p><a id="ref-geojson-coords" href="#ref-geojson-coords" class="permalink">🔗</a>
+<code class="language-plaintext highlighter-rouge">GeoJSON Coordinate System</code> - Section 4. Coordinate Reference System, “The GeoJSON Format”, RFC 7946, Internet Engineering Task Force (IETF),
+<a href="https://datatracker.ietf.org/doc/html/rfc7946#section-4">https://datatracker.ietf.org/doc/html/rfc7946#section-4</a></p>
 
 <p><a id="ref-rfc8259-strings" href="#ref-rfc8259-strings" class="permalink">🔗</a>
 <code class="language-plaintext highlighter-rouge">RFC 8259 Section 7</code> - Section 7. Strings, “The JavaScript Object Notation (JSON) Data Interchange Format”, RFC 8259, Internet Engineering Task Force (IETF),
